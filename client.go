@@ -29,7 +29,7 @@ outer:
 				break outer
 			}
 
-			fmt.Printf("Received : %s", data.Text())
+			fmt.Printf("%s\n", data.Text())
 		}
 	}
 
@@ -45,11 +45,13 @@ outer:
 		case <-ctx.Done():
 			break outer
 		default:
-			_, err := conn.Write([]byte(msg.Text() + "\n"))
+			if msg.Scan() {
+				_, err := conn.Write([]byte(msg.Text() + "\n"))
 
-			if err != nil {
-				fmt.Printf("error happened during msg send: %v", err)
-				break outer
+				if err != nil {
+					fmt.Printf("error happened during msg send: %v", err)
+					break outer
+				}
 			}
 		}
 	}
@@ -59,7 +61,7 @@ outer:
 
 func main() {
 	dialer := net.Dialer{}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Second)
 	conn, err := dialer.DialContext(ctx, "tcp", "127.0.0.1:23")
 	defer func() {
 		err := conn.Close()
@@ -87,4 +89,5 @@ func main() {
 	}()
 
 	wg.Wait()
+	conn.Close()
 }
